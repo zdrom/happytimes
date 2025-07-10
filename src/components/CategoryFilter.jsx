@@ -18,12 +18,16 @@ const CategoryFilter = ({ articles, selectedCategories, onCategoryToggle, isDark
           const isSelected = selectedCategories.includes(category);
           const articleCount = articles.filter(article => article.section === category).length;
           
+          // Truncate long category names for mobile
+          const displayCategory = category.length > 12 ? category.substring(0, 12) + '…' : category;
+          
           return (
             <button
               key={category}
               onClick={() => onCategoryToggle(category)}
+              title={category} // Show full name on hover
               className={`
-                inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border transition-all duration-200
+                inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border transition-all duration-200 whitespace-nowrap
                 ${isSelected 
                   ? isDarkMode 
                     ? 'bg-happy-blue-dark text-white border-happy-blue-dark' 
@@ -34,8 +38,10 @@ const CategoryFilter = ({ articles, selectedCategories, onCategoryToggle, isDark
                 }
               `}
             >
-              {category}
-              <span className={`ml-1 ${isSelected ? 'text-current' : isDarkMode ? 'text-gray-500' : 'text-gray-500'}`}>
+              <span className="truncate max-w-[80px] sm:max-w-none">
+                {displayCategory}
+              </span>
+              <span className={`ml-1 flex-shrink-0 ${isSelected ? 'text-current' : isDarkMode ? 'text-gray-500' : 'text-gray-500'}`}>
                 ({articleCount})
               </span>
             </button>
