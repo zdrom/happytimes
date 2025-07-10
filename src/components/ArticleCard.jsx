@@ -1,6 +1,6 @@
 import React from 'react';
 
-const ArticleCard = ({ article }) => {
+const ArticleCard = ({ article, isDarkMode }) => {
   const formatDate = (dateString) => {
     const date = new Date(dateString);
     return date.toLocaleDateString('en-US', {
@@ -26,17 +26,25 @@ const ArticleCard = ({ article }) => {
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-md mb-4 border-l-4 border-happy-green hover:shadow-lg transition-shadow duration-200 overflow-hidden">
+    <div className={`rounded-lg shadow-md mb-4 border-l-4 hover:shadow-lg transition-shadow duration-200 overflow-hidden ${
+      isDarkMode 
+        ? 'bg-gray-800 border-happy-green-dark' 
+        : 'bg-white border-happy-green'
+    }`}>
       <div className="p-4">
         <div className="flex flex-col space-y-3">
         <div className="flex items-start justify-between">
           <div className="flex items-center space-x-2">
-            <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+            <span className={`text-xs font-medium uppercase tracking-wide ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
               {article.section}
             </span>
             <div className="flex items-center space-x-1">
               {article.isNew && (
-                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800 border border-red-200">
+                <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border ${
+                  isDarkMode 
+                    ? 'bg-red-900 text-red-300 border-red-700' 
+                    : 'bg-red-100 text-red-800 border-red-200'
+                }`}>
                   ✨ NEW
                 </span>
               )}
@@ -47,7 +55,7 @@ const ArticleCard = ({ article }) => {
               )}
             </div>
           </div>
-          <span className="text-xs text-gray-400">
+          <span className={`text-xs ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>
             {formatDate(article.publishedDate)}
           </span>
         </div>
@@ -66,20 +74,20 @@ const ArticleCard = ({ article }) => {
             </div>
           )}
           <div className="flex-1">
-            <h2 className="text-lg font-semibold text-gray-900 leading-tight">
+            <h2 className={`text-lg font-semibold leading-tight ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
               {article.headline}
             </h2>
           </div>
         </div>
         
         {article.abstract && (
-          <p className="text-gray-600 text-sm leading-relaxed">
+          <p className={`text-sm leading-relaxed ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
             {article.abstract}
           </p>
         )}
         
         {article.byline && (
-          <p className="text-xs text-gray-500 italic">
+          <p className={`text-xs italic ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
             {article.byline}
           </p>
         )}
@@ -89,7 +97,11 @@ const ArticleCard = ({ article }) => {
             href={article.url}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center px-3 py-2 text-sm font-medium text-white bg-gradient-to-r from-happy-blue to-happy-purple hover:from-happy-purple hover:to-happy-blue rounded-md transition-all duration-200 shadow-sm hover:shadow-md"
+            className={`inline-flex items-center px-3 py-2 text-sm font-medium text-white rounded-md transition-all duration-200 shadow-sm hover:shadow-md ${
+              isDarkMode
+                ? 'bg-gradient-to-r from-happy-blue-dark to-happy-purple-dark hover:from-happy-purple-dark hover:to-happy-blue-dark'
+                : 'bg-gradient-to-r from-happy-blue to-happy-purple hover:from-happy-purple hover:to-happy-blue'
+            }`}
           >
             Read Full Article
             <svg className="ml-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

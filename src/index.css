@@ -8,6 +8,6 @@
   }
   
   body {
-    @apply bg-gradient-to-br from-happy-yellow to-happy-orange min-h-screen;
+    @apply min-h-screen;
   }
 }

@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import ArticleList from './components/ArticleList';
+import CategoryFilter from './components/CategoryFilter';
+import DarkModeToggle from './components/DarkModeToggle';
 import { fetchArticles, formatArticle } from './services/nytimes';
 import { filterHappyArticlesWithAI } from './services/openaiSentiment';
 import { articleCache } from './services/articleCache';
 import { newArticleTracker } from './services/newArticleTracker';
+import { useDarkMode } from './hooks/useDarkMode';
 
 function App() {
   const [articles, setArticles] = useState([]);
@@ -12,6 +15,8 @@ function App() {
   const [apiKey, setApiKey] = useState(import.meta.env.VITE_NYTIMES_API_KEY || '');
   const [showApiInput, setShowApiInput] = useState(!import.meta.env.VITE_NYTIMES_API_KEY);
   const [aiProgress, setAiProgress] = useState({ current: 0, total: 0, cached: 0 });
+  const [selectedCategories, setSelectedCategories] = useState([]);
+  const [isDarkMode, toggleDarkMode] = useDarkMode();
 
   const loadArticles = async (key) => {
     setLoading(true);
@@ -83,24 +88,32 @@ function App() {
     }
   }, []);
 
-  const handleRefresh = () => {
-    if (apiKey) {
-      loadArticles(apiKey);
-    }
+  const handleCategoryToggle = (category) => {
+    setSelectedCategories(prev => 
+      prev.includes(category) 
+        ? prev.filter(cat => cat !== category)
+        : [...prev, category]
+    );
   };
+
+  // Filter articles by selected categories
+  const filteredArticles = selectedCategories.length === 0 
+    ? articles 
+    : articles.filter(article => selectedCategories.includes(article.section));
 
   if (showApiInput) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-happy-yellow to-happy-orange flex items-center justify-center px-4">
-        <div className="bg-white rounded-lg shadow-xl p-8 max-w-md w-full">
+      <div className={`min-h-screen flex items-center justify-center px-4 ${isDarkMode ? 'bg-gradient-to-br from-gray-900 to-gray-800' : 'bg-gradient-to-br from-happy-yellow to-happy-orange'}`}>
+        <DarkModeToggle isDarkMode={isDarkMode} onToggle={toggleDarkMode} />
+        <div className={`rounded-lg shadow-xl p-8 max-w-md w-full ${isDarkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white'}`}>
           <div className="text-center mb-6">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">🌟 HappyTimes</h1>
-            <p className="text-gray-600">Your source for uplifting news</p>
+            <h1 className={`text-3xl font-bold mb-2 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>🌟 HappyTimes</h1>
+            <p className={isDarkMode ? 'text-gray-300' : 'text-gray-600'}>Your source for uplifting news</p>
           </div>
           
           <form onSubmit={handleApiKeySubmit} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className={`block text-sm font-medium mb-2 ${isDarkMode ? 'text-gray-200' : 'text-gray-700'}`}>
                 NYTimes API Key
               </label>
               <input
@@ -108,21 +121,29 @@ function App() {
                 value={apiKey}
                 onChange={(e) => setApiKey(e.target.value)}
                 placeholder="Enter your NYTimes API key"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-happy-blue focus:border-transparent"
+                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:border-transparent ${
+                  isDarkMode 
+                    ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400 focus:ring-happy-blue-dark' 
+                    : 'bg-white border-gray-300 text-gray-900 focus:ring-happy-blue'
+                }`}
                 required
               />
             </div>
             
             <button
               type="submit"
-              className="w-full bg-gradient-to-r from-happy-blue to-happy-purple text-white py-2 px-4 rounded-md hover:from-happy-purple hover:to-happy-blue transition-all duration-200 font-medium"
+              className={`w-full py-2 px-4 rounded-md font-medium transition-all duration-200 ${
+                isDarkMode
+                  ? 'bg-gradient-to-r from-happy-blue-dark to-happy-purple-dark hover:from-happy-purple-dark hover:to-happy-blue-dark text-white'
+                  : 'bg-gradient-to-r from-happy-blue to-happy-purple hover:from-happy-purple hover:to-happy-blue text-white'
+              }`}
             >
               Get Happy News
             </button>
           </form>
           
-          <div className="mt-6 text-xs text-gray-500">
-            <p>Need an API key? Get one from the <a href="https://developer.nytimes.com/get-started" target="_blank" rel="noopener noreferrer" className="text-happy-blue hover:underline">NYTimes Developer Portal</a></p>
+          <div className={`mt-6 text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+            <p>Need an API key? Get one from the <a href="https://developer.nytimes.com/get-started" target="_blank" rel="noopener noreferrer" className={`hover:underline ${isDarkMode ? 'text-happy-blue-dark' : 'text-happy-blue'}`}>NYTimes Developer Portal</a></p>
           </div>
         </div>
       </div>
@@ -130,55 +151,45 @@ function App() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-happy-yellow to-happy-orange">
+    <div className={`min-h-screen ${isDarkMode ? 'bg-gradient-to-br from-gray-900 to-gray-800' : 'bg-gradient-to-br from-happy-yellow to-happy-orange'}`}>
+      <DarkModeToggle isDarkMode={isDarkMode} onToggle={toggleDarkMode} />
       <div className="max-w-2xl mx-auto px-4 py-8">
         <header className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">🌟 HappyTimes</h1>
-          <p className="text-gray-700">Uplifting news from The New York Times</p>
-          <div className="mt-2 text-sm text-gray-600">
+          <h1 className={`text-4xl font-bold mb-2 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>🌟 HappyTimes</h1>
+          <p className={isDarkMode ? 'text-gray-300' : 'text-gray-700'}>Uplifting news from The New York Times</p>
+          <div className={`mt-2 text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
             <p>🤖 AI-powered sentiment analysis showing uplifting English articles (6+/10 positivity)</p>
           </div>
           
-          <div className="mt-4 flex justify-center space-x-4">
-            <button
-              onClick={handleRefresh}
-              disabled={loading}
-              className="inline-flex items-center px-4 py-2 bg-white text-gray-700 rounded-md shadow-sm hover:bg-gray-50 transition-colors duration-200 disabled:opacity-50"
-            >
-              <svg className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-              </svg>
-              {loading ? 'Loading...' : 'Refresh'}
-            </button>
-            
-            <button
-              onClick={() => setShowApiInput(true)}
-              className="inline-flex items-center px-4 py-2 bg-white text-gray-700 rounded-md shadow-sm hover:bg-gray-50 transition-colors duration-200"
-            >
-              <svg className="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
-              </svg>
-              Change API Key
-            </button>
-          </div>
         </header>
 
         <main>
+          <CategoryFilter 
+            articles={articles}
+            selectedCategories={selectedCategories}
+            onCategoryToggle={handleCategoryToggle}
+            isDarkMode={isDarkMode}
+          />
+          
           {loading && aiProgress.total > 0 && aiProgress.uncached > 0 && (
-            <div className="bg-white rounded-lg shadow-md p-4 mb-4 text-center">
-              <div className="text-sm text-gray-600 mb-2">
+            <div className={`rounded-lg shadow-md p-4 mb-4 text-center ${isDarkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white'}`}>
+              <div className={`text-sm mb-2 ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
                 🤖 AI is analyzing {aiProgress.uncached} new articles for positive sentiment...
               </div>
-              <div className="w-full bg-gray-200 rounded-full h-2">
+              <div className={`w-full rounded-full h-2 ${isDarkMode ? 'bg-gray-700' : 'bg-gray-200'}`}>
                 <div 
-                  className="bg-gradient-to-r from-happy-blue to-happy-purple h-2 rounded-full transition-all duration-300"
+                  className={`h-2 rounded-full transition-all duration-300 ${
+                    isDarkMode 
+                      ? 'bg-gradient-to-r from-happy-blue-dark to-happy-purple-dark'
+                      : 'bg-gradient-to-r from-happy-blue to-happy-purple'
+                  }`}
                   style={{ width: `${(aiProgress.current / aiProgress.total) * 100}%` }}
                 ></div>
               </div>
-              <div className="text-xs text-gray-500 mt-1">
+              <div className={`text-xs mt-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                 {aiProgress.current} of {aiProgress.total} articles analyzed
                 {aiProgress.cached > 0 && (
-                  <span className="text-green-600 ml-2">
+                  <span className={`ml-2 ${isDarkMode ? 'text-green-400' : 'text-green-600'}`}>
                     • {aiProgress.cached} cached (instant loading!)
                   </span>
                 )}
@@ -187,19 +198,23 @@ function App() {
           )}
           
           {loading && aiProgress.total > 0 && aiProgress.uncached === 0 && (
-            <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4 text-center">
-              <div className="text-sm text-green-700 mb-1">
+            <div className={`border rounded-lg p-4 mb-4 text-center ${
+              isDarkMode 
+                ? 'bg-green-900 border-green-700' 
+                : 'bg-green-50 border-green-200'
+            }`}>
+              <div className={`text-sm mb-1 ${isDarkMode ? 'text-green-300' : 'text-green-700'}`}>
                 💾 All articles loaded from cache - instant results!
               </div>
-              <div className="text-xs text-green-600">
+              <div className={`text-xs ${isDarkMode ? 'text-green-400' : 'text-green-600'}`}>
                 {aiProgress.cached} articles loaded instantly (no AI analysis needed)
               </div>
             </div>
           )}
-          <ArticleList articles={articles} loading={loading} error={error} />
+          <ArticleList articles={filteredArticles} loading={loading} error={error} isDarkMode={isDarkMode} />
         </main>
         
-        <footer className="text-center mt-8 text-gray-600 text-sm">
+        <footer className={`text-center mt-8 text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
           <p>Powered by The New York Times API</p>
         </footer>
       </div>
