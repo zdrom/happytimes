@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import ArticleList from './components/ArticleList';
 import { fetchArticles, formatArticle } from './services/nytimes';
-import { filterHappyArticles } from './services/sentiment';
+import { filterHappyArticlesWithAI } from './services/openaiSentiment';
 
 function App() {
   const [articles, setArticles] = useState([]);
@@ -9,15 +9,30 @@ function App() {
   const [error, setError] = useState(null);
   const [apiKey, setApiKey] = useState(import.meta.env.VITE_NYTIMES_API_KEY || '');
   const [showApiInput, setShowApiInput] = useState(!import.meta.env.VITE_NYTIMES_API_KEY);
+  const [aiProgress, setAiProgress] = useState({ current: 0, total: 0 });
 
   const loadArticles = async (key) => {
     setLoading(true);
     setError(null);
+    setAiProgress({ current: 0, total: 0 });
     
     try {
+      // Check if OpenAI API key is available
+      if (!import.meta.env.VITE_OPENAI_API_KEY) {
+        setError('OpenAI API key not configured. Please add VITE_OPENAI_API_KEY to your environment variables.');
+        return;
+      }
+
       const rawArticles = await fetchArticles(key);
       const formattedArticles = rawArticles.map(formatArticle);
-      const happyArticles = filterHappyArticles(formattedArticles);
+      
+      setAiProgress({ current: 0, total: formattedArticles.length });
+      
+      // Use AI-powered sentiment analysis with progress tracking
+      const happyArticles = await filterHappyArticlesWithAI(
+        formattedArticles,
+        (current, total) => setAiProgress({ current, total })
+      );
       
       setArticles(happyArticles);
       
@@ -28,6 +43,7 @@ function App() {
       setError(err.message || 'Failed to load articles');
     } finally {
       setLoading(false);
+      setAiProgress({ current: 0, total: 0 });
     }
   };
 
@@ -99,7 +115,7 @@ function App() {
           <h1 className="text-4xl font-bold text-gray-900 mb-2">🌟 HappyTimes</h1>
           <p className="text-gray-700">Uplifting news from The New York Times</p>
           <div className="mt-2 text-sm text-gray-600">
-            <p>Showing English articles with positive sentiment score (&gt;0) and no negative keywords</p>
+            <p>🤖 AI-powered sentiment analysis showing uplifting English articles (6+/10 positivity)</p>
           </div>
           
           <div className="mt-4 flex justify-center space-x-4">
@@ -127,6 +143,22 @@ function App() {
         </header>
 
         <main>
+          {loading && aiProgress.total > 0 && (
+            <div className="bg-white rounded-lg shadow-md p-4 mb-4 text-center">
+              <div className="text-sm text-gray-600 mb-2">
+                🤖 AI is analyzing articles for positive sentiment...
+              </div>
+              <div className="w-full bg-gray-200 rounded-full h-2">
+                <div 
+                  className="bg-gradient-to-r from-happy-blue to-happy-purple h-2 rounded-full transition-all duration-300"
+                  style={{ width: `${(aiProgress.current / aiProgress.total) * 100}%` }}
+                ></div>
+              </div>
+              <div className="text-xs text-gray-500 mt-1">
+                {aiProgress.current} of {aiProgress.total} articles analyzed
+              </div>
+            </div>
+          )}
           <ArticleList articles={articles} loading={loading} error={error} />
         </main>
         

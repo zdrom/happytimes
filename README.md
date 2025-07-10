@@ -4,7 +4,7 @@ A personal news aggregator that shows only happy and uplifting articles from The
 
 ## Features
 
-- **Sentiment Analysis**: Filters articles to show only positive/uplifting content
+- **AI-Powered Sentiment Analysis**: Uses OpenAI to intelligently filter articles for truly uplifting content
 - **Smart Filtering**: Removes articles with negative keywords, political content, and Spanish articles
 - **Mobile-First Design**: Clean, responsive interface built with Tailwind CSS
 - **Sentiment Scores**: Visual indicators showing how positive each article is
@@ -15,7 +15,7 @@ A personal news aggregator that shows only happy and uplifting articles from The
 
 - **Frontend**: React 18 with Vite
 - **Styling**: Tailwind CSS with custom happy color palette
-- **Sentiment Analysis**: Sentiment.js for client-side analysis
+- **AI Analysis**: OpenAI GPT-3.5-turbo for intelligent sentiment analysis
 - **API**: NYTimes TimeWire API integration
 
 ## Getting Started
@@ -31,16 +31,19 @@ A personal news aggregator that shows only happy and uplifting articles from The
    npm install
    ```
 
-3. Get a NYTimes API key from [NYTimes Developer Portal](https://developer.nytimes.com/get-started)
+3. Get API keys:
+   - NYTimes API key from [NYTimes Developer Portal](https://developer.nytimes.com/get-started)
+   - OpenAI API key from [OpenAI Platform](https://platform.openai.com/api-keys)
 
 4. Create a `.env` file in the root directory:
    ```bash
    cp .env.example .env
    ```
 
-5. Add your API key to the `.env` file:
+5. Add your API keys to the `.env` file:
    ```
-   VITE_NYTIMES_API_KEY=your_actual_api_key_here
+   VITE_NYTIMES_API_KEY=your_actual_nytimes_api_key_here
+   VITE_OPENAI_API_KEY=your_actual_openai_api_key_here
    ```
 
 6. Start the development server:
@@ -53,15 +56,16 @@ A personal news aggregator that shows only happy and uplifting articles from The
 ## How It Works
 
 1. **Fetches** articles from the NYTimes TimeWire API
-2. **Analyzes** sentiment of headlines and abstracts using Sentiment.js
-3. **Filters** to show only articles with positive sentiment scores (>0)
+2. **Analyzes** sentiment using OpenAI GPT-3.5-turbo for intelligent content evaluation
+3. **Filters** to show only articles with AI-verified uplifting content (6+/10 positivity score)
 4. **Excludes** articles with negative keywords, Spanish content, and political references
-5. **Displays** happy news in a beautiful, mobile-friendly interface
+5. **Displays** happy news with AI reasoning in a beautiful, mobile-friendly interface
 
 ## Filtering Logic
 
 Articles are included if they meet ALL criteria:
-- ✅ Positive sentiment score (combined headline + abstract > 0)
+- ✅ AI-verified uplifting content (GPT-3.5-turbo analysis)
+- ✅ Sentiment score of 6+/10 (above neutral, genuinely positive)
 - ✅ English language only
 - ✅ No negative keywords (death, war, crime, etc.)
 - ✅ No political content (Trump references filtered out)

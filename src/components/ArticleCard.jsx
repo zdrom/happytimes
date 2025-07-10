@@ -12,17 +12,17 @@ const ArticleCard = ({ article }) => {
   };
 
   const getSentimentColor = (score) => {
-    if (score >= 3) return 'bg-green-100 text-green-800 border-green-200';
-    if (score >= 2) return 'bg-emerald-100 text-emerald-800 border-emerald-200';
-    if (score >= 1) return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+    if (score >= 9) return 'bg-green-100 text-green-800 border-green-200';
+    if (score >= 8) return 'bg-emerald-100 text-emerald-800 border-emerald-200';
+    if (score >= 7) return 'bg-yellow-100 text-yellow-800 border-yellow-200';
     return 'bg-blue-100 text-blue-800 border-blue-200';
   };
 
   const getSentimentLabel = (score) => {
-    if (score >= 3) return 'Very Positive';
-    if (score >= 2) return 'Positive';
-    if (score >= 1) return 'Mildly Positive';
-    return 'Neutral+';
+    if (score >= 9) return 'Very Uplifting';
+    if (score >= 8) return 'Uplifting';
+    if (score >= 7) return 'Positive';
+    return 'Happy';
   };
 
   return (
@@ -34,9 +34,9 @@ const ArticleCard = ({ article }) => {
             <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">
               {article.section}
             </span>
-            {article.sentimentData && (
-              <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border ${getSentimentColor(article.sentimentData.combinedScore)}`}>
-                {getSentimentLabel(article.sentimentData.combinedScore)} (+{article.sentimentData.combinedScore})
+            {article.aiSentiment && (
+              <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border ${getSentimentColor(article.aiSentiment.score)}`}>
+                🤖 {getSentimentLabel(article.aiSentiment.score)} ({article.aiSentiment.score}/10)
               </span>
             )}
           </div>
