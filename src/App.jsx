@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import ArticleList from './components/ArticleList';
 import { fetchArticles, formatArticle } from './services/nytimes';
 import { filterHappyArticlesWithAI } from './services/openaiSentiment';
+import { articleCache } from './services/articleCache';
 
 function App() {
   const [articles, setArticles] = useState([]);
@@ -9,12 +10,12 @@ function App() {
   const [error, setError] = useState(null);
   const [apiKey, setApiKey] = useState(import.meta.env.VITE_NYTIMES_API_KEY || '');
   const [showApiInput, setShowApiInput] = useState(!import.meta.env.VITE_NYTIMES_API_KEY);
-  const [aiProgress, setAiProgress] = useState({ current: 0, total: 0 });
+  const [aiProgress, setAiProgress] = useState({ current: 0, total: 0, cached: 0 });
 
   const loadArticles = async (key) => {
     setLoading(true);
     setError(null);
-    setAiProgress({ current: 0, total: 0 });
+    setAiProgress({ current: 0, total: 0, cached: 0 });
     
     try {
       // Check if OpenAI API key is available
@@ -26,12 +27,18 @@ function App() {
       const rawArticles = await fetchArticles(key);
       const formattedArticles = rawArticles.map(formatArticle);
       
-      setAiProgress({ current: 0, total: formattedArticles.length });
+      setAiProgress({ current: 0, total: formattedArticles.length, cached: 0 });
+      
+      // Count cached articles
+      let cachedCount = 0;
+      formattedArticles.forEach(article => {
+        if (articleCache.has(article)) cachedCount++;
+      });
       
       // Use AI-powered sentiment analysis with progress tracking
       const happyArticles = await filterHappyArticlesWithAI(
         formattedArticles,
-        (current, total) => setAiProgress({ current, total })
+        (current, total) => setAiProgress({ current, total, cached: cachedCount })
       );
       
       setArticles(happyArticles);
@@ -43,7 +50,7 @@ function App() {
       setError(err.message || 'Failed to load articles');
     } finally {
       setLoading(false);
-      setAiProgress({ current: 0, total: 0 });
+      setAiProgress({ current: 0, total: 0, cached: 0 });
     }
   };
 
@@ -156,6 +163,11 @@ function App() {
               </div>
               <div className="text-xs text-gray-500 mt-1">
                 {aiProgress.current} of {aiProgress.total} articles analyzed
+                {aiProgress.cached > 0 && (
+                  <span className="text-green-600 ml-2">
+                    • {aiProgress.cached} cached (saved API calls!)
+                  </span>
+                )}
               </div>
             </div>
           )}

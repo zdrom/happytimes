@@ -36,7 +36,7 @@ const ArticleCard = ({ article }) => {
             </span>
             {article.aiSentiment && (
               <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border ${getSentimentColor(article.aiSentiment.score)}`}>
-                🤖 {getSentimentLabel(article.aiSentiment.score)} ({article.aiSentiment.score}/10)
+                {article.aiSentiment.cached ? '💾' : '🤖'} {getSentimentLabel(article.aiSentiment.score)} ({article.aiSentiment.score}/10)
               </span>
             )}
           </div>

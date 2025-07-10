@@ -1,4 +1,5 @@
 import OpenAI from 'openai';
+import { articleCache } from './articleCache.js';
 
 const openai = new OpenAI({
   apiKey: import.meta.env.VITE_OPENAI_API_KEY,
@@ -8,6 +9,20 @@ const openai = new OpenAI({
 export const analyzeArticleWithAI = async (article) => {
   if (!import.meta.env.VITE_OPENAI_API_KEY) {
     throw new Error('OpenAI API key not configured');
+  }
+
+  // Check cache first
+  const cachedResult = articleCache.get(article);
+  if (cachedResult) {
+    // Use cached result
+    article.aiSentiment = {
+      score: cachedResult.sentiment,
+      isUplifting: cachedResult.isUplifting,
+      reasoning: cachedResult.reasoning,
+      originalScore: cachedResult.sentiment,
+      cached: true // Mark as cached for debugging
+    };
+    return cachedResult;
   }
 
   const prompt = `Analyze the sentiment and content of this news article. Respond with a JSON object containing:
@@ -40,12 +55,16 @@ Respond only with valid JSON:`;
 
     const result = JSON.parse(response.choices[0].message.content);
     
+    // Cache the result
+    articleCache.set(article, result);
+    
     // Add the AI analysis to the article
     article.aiSentiment = {
       score: result.sentiment,
       isUplifting: result.isUplifting,
       reasoning: result.reasoning,
-      originalScore: result.sentiment // Keep original for display
+      originalScore: result.sentiment,
+      cached: false // Mark as fresh analysis
     };
 
     return result;
