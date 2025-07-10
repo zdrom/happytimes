@@ -1,15 +1,17 @@
 import React from 'react';
 
 const CategoryFilter = ({ articles, selectedCategories, onCategoryToggle, isDarkMode }) => {
-  // Get unique categories from articles
+  // Get unique categories from articles (these are already filtered happy articles)
   const categories = [...new Set(articles.map(article => article.section).filter(Boolean))].sort();
   
   if (categories.length === 0) return null;
 
+  const totalArticles = articles.length;
+
   return (
     <div className={`${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} rounded-lg shadow-md p-4 mb-6 border`}>
       <h3 className={`text-sm font-medium ${isDarkMode ? 'text-gray-200' : 'text-gray-700'} mb-3`}>
-        📂 Filter by Category
+        📂 Filter by Category ({totalArticles} happy articles)
       </h3>
       <div className="flex flex-wrap gap-2">
         {categories.map(category => {
