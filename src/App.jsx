@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import ArticleList from './components/ArticleList';
 import CategoryFilter from './components/CategoryFilter';
-import DarkModeToggle from './components/DarkModeToggle';
-import AuthGate from './components/AuthGate';
+import PreferencesButton from './components/PreferencesButton';
+import PreferencesModal from './components/PreferencesModal';
 import { fetchArticles, formatArticle } from './services/nytimes';
 import { filterHappyArticlesWithAI } from './services/openaiSentiment';
 import { articleCache } from './services/articleCache';
@@ -13,28 +13,32 @@ function App() {
   const [articles, setArticles] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [apiKey, setApiKey] = useState(import.meta.env.VITE_NYTIMES_API_KEY || '');
-  const [showApiInput, setShowApiInput] = useState(!import.meta.env.VITE_NYTIMES_API_KEY);
   const [aiProgress, setAiProgress] = useState({ current: 0, total: 0, cached: 0 });
   const [selectedCategories, setSelectedCategories] = useState([]);
   const [isDarkMode, toggleDarkMode] = useDarkMode();
-  const [isAuthenticated, setIsAuthenticated] = useState(() => {
-    return localStorage.getItem('happytimes-auth') === 'true';
-  });
+  const [showPreferences, setShowPreferences] = useState(false);
+  
+  // API Keys from localStorage
+  const [nytApiKey, setNytApiKey] = useState(() => localStorage.getItem('happytimes-nyt-key') || '');
+  const [openaiApiKey, setOpenaiApiKey] = useState(() => localStorage.getItem('happytimes-openai-key') || '');
+  const [hasValidKeys, setHasValidKeys] = useState(false);
 
-  const loadArticles = async (key) => {
+  useEffect(() => {
+    setHasValidKeys(!!nytApiKey && !!openaiApiKey);
+  }, [nytApiKey, openaiApiKey]);
+
+  const loadArticles = async () => {
+    if (!nytApiKey || !openaiApiKey) {
+      setError('Please configure your API keys in preferences');
+      return;
+    }
+
     setLoading(true);
     setError(null);
     setAiProgress({ current: 0, total: 0, cached: 0 });
     
     try {
-      // Check if OpenAI API key is available
-      if (!import.meta.env.VITE_OPENAI_API_KEY) {
-        setError('OpenAI API key not configured. Please add VITE_OPENAI_API_KEY to your environment variables.');
-        return;
-      }
-
-      const rawArticles = await fetchArticles(key);
+      const rawArticles = await fetchArticles(nytApiKey);
       const formattedArticles = rawArticles.map(formatArticle);
       
       setAiProgress({ current: 0, total: formattedArticles.length, cached: 0 });
@@ -50,6 +54,7 @@ function App() {
       // Use AI-powered sentiment analysis with progress tracking
       const happyArticles = await filterHappyArticlesWithAI(
         formattedArticles,
+        openaiApiKey,
         (current, total) => {
           setAiProgress({ 
             current, 
@@ -77,20 +82,22 @@ function App() {
     }
   };
 
-  const handleApiKeySubmit = (e) => {
-    e.preventDefault();
-    if (apiKey.trim()) {
-      setShowApiInput(false);
-      loadArticles(apiKey);
-    }
+  const handleSaveKeys = (nytKey, openaiKey) => {
+    localStorage.setItem('happytimes-nyt-key', nytKey);
+    localStorage.setItem('happytimes-openai-key', openaiKey);
+    setNytApiKey(nytKey);
+    setOpenaiApiKey(openaiKey);
+    
+    // Load articles after saving keys
+    setTimeout(() => loadArticles(), 100);
   };
 
-  // Auto-load articles if API key is available
+  // Auto-load articles if API keys are available
   useEffect(() => {
-    if (apiKey && !showApiInput) {
-      loadArticles(apiKey);
+    if (hasValidKeys && articles.length === 0) {
+      loadArticles();
     }
-  }, []);
+  }, [hasValidKeys]);
 
   const handleCategoryToggle = (category) => {
     setSelectedCategories(prev => 
@@ -105,59 +112,44 @@ function App() {
     ? articles 
     : articles.filter(article => selectedCategories.includes(article.section));
 
-  // Show auth gate if not authenticated
-  if (!isAuthenticated) {
+  // Show preferences modal if no valid keys
+  if (!hasValidKeys) {
     return (
-      <>
-        <DarkModeToggle isDarkMode={isDarkMode} onToggle={toggleDarkMode} />
-        <AuthGate onAuthenticated={() => setIsAuthenticated(true)} isDarkMode={isDarkMode} />
-      </>
-    );
-  }
-
-  if (showApiInput) {
-    return (
-      <div className={`min-h-screen flex items-center justify-center px-4 ${isDarkMode ? 'bg-gradient-to-br from-gray-900 to-gray-800' : 'bg-gradient-to-br from-happy-yellow to-happy-orange'}`}>
-        <DarkModeToggle isDarkMode={isDarkMode} onToggle={toggleDarkMode} />
-        <div className={`rounded-lg shadow-xl p-8 max-w-md w-full ${isDarkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white'}`}>
-          <div className="text-center mb-6">
-            <h1 className={`text-3xl font-bold mb-2 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>🌟 HappyTimes</h1>
-            <p className={isDarkMode ? 'text-gray-300' : 'text-gray-600'}>Your source for uplifting news</p>
-          </div>
-          
-          <form onSubmit={handleApiKeySubmit} className="space-y-4">
-            <div>
-              <label className={`block text-sm font-medium mb-2 ${isDarkMode ? 'text-gray-200' : 'text-gray-700'}`}>
-                NYTimes API Key
-              </label>
-              <input
-                type="password"
-                value={apiKey}
-                onChange={(e) => setApiKey(e.target.value)}
-                placeholder="Enter your NYTimes API key"
-                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:border-transparent ${
-                  isDarkMode 
-                    ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400 focus:ring-happy-blue-dark' 
-                    : 'bg-white border-gray-300 text-gray-900 focus:ring-happy-blue'
-                }`}
-                required
-              />
+      <div className={`min-h-screen ${isDarkMode ? 'bg-gradient-to-br from-gray-900 to-gray-800' : 'bg-gradient-to-br from-happy-yellow to-happy-orange'}`}>
+        <PreferencesButton 
+          isDarkMode={isDarkMode} 
+          onOpenPreferences={() => setShowPreferences(true)} 
+        />
+        <PreferencesModal
+          isOpen={!hasValidKeys || showPreferences}
+          onClose={() => setShowPreferences(false)}
+          isDarkMode={isDarkMode}
+          onToggleDarkMode={toggleDarkMode}
+          nytApiKey={nytApiKey}
+          openaiApiKey={openaiApiKey}
+          onSaveKeys={handleSaveKeys}
+        />
+        <div className="min-h-screen flex items-center justify-center px-4">
+          <div className={`rounded-lg shadow-xl p-8 max-w-md w-full ${isDarkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white'}`}>
+            <div className="text-center mb-6">
+              <h1 className={`text-3xl font-bold mb-2 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>🌟 HappyTimes</h1>
+              <p className={isDarkMode ? 'text-gray-300' : 'text-gray-600'}>Your source for uplifting news</p>
             </div>
-            
-            <button
-              type="submit"
-              className={`w-full py-2 px-4 rounded-md font-medium transition-all duration-200 ${
-                isDarkMode
-                  ? 'bg-gradient-to-r from-happy-blue-dark to-happy-purple-dark hover:from-happy-purple-dark hover:to-happy-blue-dark text-white'
-                  : 'bg-gradient-to-r from-happy-blue to-happy-purple hover:from-happy-purple hover:to-happy-blue text-white'
-              }`}
-            >
-              Get Happy News
-            </button>
-          </form>
-          
-          <div className={`mt-6 text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-            <p>Need an API key? Get one from the <a href="https://developer.nytimes.com/get-started" target="_blank" rel="noopener noreferrer" className={`hover:underline ${isDarkMode ? 'text-happy-blue-dark' : 'text-happy-blue'}`}>NYTimes Developer Portal</a></p>
+            <div className="text-center">
+              <p className={`mb-4 ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+                Please configure your API keys to get started
+              </p>
+              <button
+                onClick={() => setShowPreferences(true)}
+                className={`py-2 px-4 rounded-md font-medium transition-all duration-200 ${
+                  isDarkMode
+                    ? 'bg-gradient-to-r from-happy-blue-dark to-happy-purple-dark hover:from-happy-purple-dark hover:to-happy-blue-dark text-white'
+                    : 'bg-gradient-to-r from-happy-blue to-happy-purple hover:from-happy-purple hover:to-happy-blue text-white'
+                }`}
+              >
+                ⚙️ Open Preferences
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -166,7 +158,19 @@ function App() {
 
   return (
     <div className={`min-h-screen ${isDarkMode ? 'bg-gradient-to-br from-gray-900 to-gray-800' : 'bg-gradient-to-br from-happy-yellow to-happy-orange'}`}>
-      <DarkModeToggle isDarkMode={isDarkMode} onToggle={toggleDarkMode} />
+      <PreferencesButton 
+        isDarkMode={isDarkMode} 
+        onOpenPreferences={() => setShowPreferences(true)} 
+      />
+      <PreferencesModal
+        isOpen={showPreferences}
+        onClose={() => setShowPreferences(false)}
+        isDarkMode={isDarkMode}
+        onToggleDarkMode={toggleDarkMode}
+        nytApiKey={nytApiKey}
+        openaiApiKey={openaiApiKey}
+        onSaveKeys={handleSaveKeys}
+      />
       <div className="max-w-2xl mx-auto px-4 py-8">
         <header className="text-center mb-8">
           <h1 className={`text-4xl font-bold mb-2 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>🌟 HappyTimes</h1>

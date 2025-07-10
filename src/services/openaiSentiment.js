@@ -1,15 +1,23 @@
 import OpenAI from 'openai';
 import { articleCache } from './articleCache.js';
 
-const openai = new OpenAI({
-  apiKey: import.meta.env.VITE_OPENAI_API_KEY,
-  dangerouslyAllowBrowser: true
-});
+let openai = null;
 
-export const analyzeArticleWithAI = async (article) => {
-  if (!import.meta.env.VITE_OPENAI_API_KEY) {
-    throw new Error('OpenAI API key not configured');
+const initOpenAI = (apiKey) => {
+  if (!openai || openai.apiKey !== apiKey) {
+    openai = new OpenAI({
+      apiKey: apiKey,
+      dangerouslyAllowBrowser: true
+    });
   }
+};
+
+export const analyzeArticleWithAI = async (article, apiKey) => {
+  if (!apiKey) {
+    throw new Error('OpenAI API key not provided');
+  }
+
+  initOpenAI(apiKey);
 
   // Check cache first
   const cachedResult = articleCache.get(article);
@@ -74,9 +82,9 @@ Respond only with valid JSON:`;
   }
 };
 
-export const isHappyArticleAI = async (article) => {
+export const isHappyArticleAI = async (article, apiKey) => {
   try {
-    const analysis = await analyzeArticleWithAI(article);
+    const analysis = await analyzeArticleWithAI(article, apiKey);
     
     // Filter criteria:
     // 1. Must be uplifting according to AI
@@ -118,7 +126,7 @@ export const isHappyArticleAI = async (article) => {
   }
 };
 
-export const filterHappyArticlesWithAI = async (articles, progressCallback = null) => {
+export const filterHappyArticlesWithAI = async (articles, apiKey, progressCallback = null) => {
   const filteredArticles = [];
   let processedCount = 0;
   
@@ -191,7 +199,7 @@ export const filterHappyArticlesWithAI = async (articles, progressCallback = nul
     const batch = uncachedArticles.slice(i, i + batchSize);
     
     const batchPromises = batch.map(async (article) => {
-      const isHappy = await isHappyArticleAI(article);
+      const isHappy = await isHappyArticleAI(article, apiKey);
       processedCount++;
       if (progressCallback) {
         progressCallback(processedCount, articles.length);
