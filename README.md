@@ -33,12 +33,22 @@ A personal news aggregator that shows only happy and uplifting articles from The
 
 3. Get a NYTimes API key from [NYTimes Developer Portal](https://developer.nytimes.com/get-started)
 
-4. Start the development server:
+4. Create a `.env` file in the root directory:
+   ```bash
+   cp .env.example .env
+   ```
+
+5. Add your API key to the `.env` file:
+   ```
+   VITE_NYTIMES_API_KEY=your_actual_api_key_here
+   ```
+
+6. Start the development server:
    ```bash
    npm run dev
    ```
 
-5. Open your browser to `http://localhost:3000` and enter your API key
+7. Open your browser to `http://localhost:3000` - articles will load automatically!
 
 ## How It Works
 

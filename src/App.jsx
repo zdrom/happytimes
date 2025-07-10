@@ -7,8 +7,8 @@ function App() {
   const [articles, setArticles] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [apiKey, setApiKey] = useState('');
-  const [showApiInput, setShowApiInput] = useState(true);
+  const [apiKey, setApiKey] = useState(import.meta.env.VITE_NYTIMES_API_KEY || '');
+  const [showApiInput, setShowApiInput] = useState(!import.meta.env.VITE_NYTIMES_API_KEY);
 
   const loadArticles = async (key) => {
     setLoading(true);
@@ -38,6 +38,13 @@ function App() {
       loadArticles(apiKey);
     }
   };
+
+  // Auto-load articles if API key is available
+  useEffect(() => {
+    if (apiKey && !showApiInput) {
+      loadArticles(apiKey);
+    }
+  }, []);
 
   const handleRefresh = () => {
     if (apiKey) {
