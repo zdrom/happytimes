@@ -156,11 +156,6 @@ function App() {
       <div className="max-w-2xl mx-auto px-4 py-8">
         <header className="text-center mb-8">
           <h1 className={`text-4xl font-bold mb-2 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>🌟 HappyTimes</h1>
-          <p className={isDarkMode ? 'text-gray-300' : 'text-gray-700'}>Uplifting news from The New York Times</p>
-          <div className={`mt-2 text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-            <p>🤖 AI-powered sentiment analysis showing uplifting English articles (6+/10 positivity)</p>
-          </div>
-          
         </header>
 
         <main>
