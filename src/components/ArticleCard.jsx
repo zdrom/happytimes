@@ -38,22 +38,11 @@ const ArticleCard = ({ article, isDarkMode }) => {
             <span className={`text-xs font-medium uppercase tracking-wide ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
               {article.section}
             </span>
-            <div className="flex items-center space-x-1">
-              {article.isNew && (
-                <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border ${
-                  isDarkMode 
-                    ? 'bg-red-900 text-red-300 border-red-700' 
-                    : 'bg-red-100 text-red-800 border-red-200'
-                }`}>
-                  ✨ NEW
-                </span>
-              )}
-              {article.aiSentiment && (
-                <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border ${getSentimentColor(article.aiSentiment.score)}`}>
-                  {article.aiSentiment.cached ? '💾' : '🤖'} {getSentimentLabel(article.aiSentiment.score)} ({article.aiSentiment.score}/10)
-                </span>
-              )}
-            </div>
+            {article.aiSentiment && (
+              <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border ${getSentimentColor(article.aiSentiment.score)}`}>
+                {article.aiSentiment.cached ? '💾' : '🤖'} {getSentimentLabel(article.aiSentiment.score)} ({article.aiSentiment.score}/10)
+              </span>
+            )}
           </div>
           <span className={`text-xs ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>
             {formatDate(article.publishedDate)}
