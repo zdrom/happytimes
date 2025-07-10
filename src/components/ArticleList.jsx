@@ -1,5 +1,7 @@
 import React from 'react';
 import ArticleCard from './ArticleCard';
+import NewArticlesDivider from './NewArticlesDivider';
+import { newArticleTracker } from '../services/newArticleTracker';
 
 const ArticleList = ({ articles, loading, error }) => {
   if (loading) {
@@ -42,10 +44,24 @@ const ArticleList = ({ articles, loading, error }) => {
     );
   }
 
+  const dividerIndex = newArticleTracker.getDividerIndex(articles);
+  const newArticlesCount = articles.filter(article => article.isNew).length;
+
   return (
     <div className="space-y-4">
-      {articles.map((article) => (
-        <ArticleCard key={article.id} article={article} />
+      {newArticlesCount > 0 && (
+        <div className="bg-green-50 border border-green-200 rounded-lg p-3 text-center">
+          <span className="text-green-700 font-medium">
+            ✨ {newArticlesCount} new article{newArticlesCount !== 1 ? 's' : ''} since your last visit!
+          </span>
+        </div>
+      )}
+      
+      {articles.map((article, index) => (
+        <React.Fragment key={article.id}>
+          {index === dividerIndex && <NewArticlesDivider />}
+          <ArticleCard article={article} />
+        </React.Fragment>
       ))}
     </div>
   );

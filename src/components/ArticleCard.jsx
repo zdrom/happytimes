@@ -34,11 +34,18 @@ const ArticleCard = ({ article }) => {
             <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">
               {article.section}
             </span>
-            {article.aiSentiment && (
-              <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border ${getSentimentColor(article.aiSentiment.score)}`}>
-                {article.aiSentiment.cached ? '💾' : '🤖'} {getSentimentLabel(article.aiSentiment.score)} ({article.aiSentiment.score}/10)
-              </span>
-            )}
+            <div className="flex items-center space-x-1">
+              {article.isNew && (
+                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800 border border-red-200">
+                  ✨ NEW
+                </span>
+              )}
+              {article.aiSentiment && (
+                <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border ${getSentimentColor(article.aiSentiment.score)}`}>
+                  {article.aiSentiment.cached ? '💾' : '🤖'} {getSentimentLabel(article.aiSentiment.score)} ({article.aiSentiment.score}/10)
+                </span>
+              )}
+            </div>
           </div>
           <span className="text-xs text-gray-400">
             {formatDate(article.publishedDate)}

@@ -3,6 +3,7 @@ import ArticleList from './components/ArticleList';
 import { fetchArticles, formatArticle } from './services/nytimes';
 import { filterHappyArticlesWithAI } from './services/openaiSentiment';
 import { articleCache } from './services/articleCache';
+import { newArticleTracker } from './services/newArticleTracker';
 
 function App() {
   const [articles, setArticles] = useState([]);
@@ -41,7 +42,10 @@ function App() {
         (current, total) => setAiProgress({ current, total, cached: cachedCount })
       );
       
-      setArticles(happyArticles);
+      // Process articles to mark new ones and sort them
+      const processedArticles = newArticleTracker.processArticles(happyArticles);
+      
+      setArticles(processedArticles);
       
       if (happyArticles.length === 0) {
         setError('No happy articles found. Try refreshing for new content!');
