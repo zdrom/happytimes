@@ -16,7 +16,7 @@ const CategoryFilter = ({ articles, selectedCategories, onCategoryToggle, isDark
         onClick={() => setIsExpanded(!isExpanded)}
         className={`w-full flex items-center justify-between text-sm font-medium ${isDarkMode ? 'text-gray-200' : 'text-gray-700'} hover:opacity-80 transition-opacity`}
       >
-        <span>📂 Filter by Category ({totalArticles} happy articles)</span>
+        <span>📂 Filter by Category</span>
         <svg 
           className={`w-4 h-4 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`} 
           fill="none" 
