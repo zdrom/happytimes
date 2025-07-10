@@ -36,10 +36,20 @@ function App() {
         if (articleCache.has(article)) cachedCount++;
       });
       
+      const uncachedCount = formattedArticles.length - cachedCount;
+      
       // Use AI-powered sentiment analysis with progress tracking
       const happyArticles = await filterHappyArticlesWithAI(
         formattedArticles,
-        (current, total) => setAiProgress({ current, total, cached: cachedCount })
+        (current, total) => {
+          setAiProgress({ 
+            current, 
+            total, 
+            cached: cachedCount,
+            uncached: uncachedCount,
+            processing: current < total
+          });
+        }
       );
       
       // Process articles to mark new ones and sort them
@@ -154,10 +164,10 @@ function App() {
         </header>
 
         <main>
-          {loading && aiProgress.total > 0 && (
+          {loading && aiProgress.total > 0 && aiProgress.uncached > 0 && (
             <div className="bg-white rounded-lg shadow-md p-4 mb-4 text-center">
               <div className="text-sm text-gray-600 mb-2">
-                🤖 AI is analyzing articles for positive sentiment...
+                🤖 AI is analyzing {aiProgress.uncached} new articles for positive sentiment...
               </div>
               <div className="w-full bg-gray-200 rounded-full h-2">
                 <div 
@@ -169,9 +179,20 @@ function App() {
                 {aiProgress.current} of {aiProgress.total} articles analyzed
                 {aiProgress.cached > 0 && (
                   <span className="text-green-600 ml-2">
-                    • {aiProgress.cached} cached (saved API calls!)
+                    • {aiProgress.cached} cached (instant loading!)
                   </span>
                 )}
+              </div>
+            </div>
+          )}
+          
+          {loading && aiProgress.total > 0 && aiProgress.uncached === 0 && (
+            <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4 text-center">
+              <div className="text-sm text-green-700 mb-1">
+                💾 All articles loaded from cache - instant results!
+              </div>
+              <div className="text-xs text-green-600">
+                {aiProgress.cached} articles loaded instantly (no AI analysis needed)
               </div>
             </div>
           )}

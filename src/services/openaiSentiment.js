@@ -122,10 +122,73 @@ export const filterHappyArticlesWithAI = async (articles, progressCallback = nul
   const filteredArticles = [];
   let processedCount = 0;
   
-  // Process articles in batches to avoid rate limits
+  // Separate cached and uncached articles for optimized processing
+  const cachedArticles = [];
+  const uncachedArticles = [];
+  
+  articles.forEach(article => {
+    if (articleCache.has(article)) {
+      cachedArticles.push(article);
+    } else {
+      uncachedArticles.push(article);
+    }
+  });
+  
+  // Process cached articles instantly (no AI calls needed)
+  for (const article of cachedArticles) {
+    const cachedResult = articleCache.get(article);
+    if (cachedResult) {
+      // Apply cached analysis to article
+      article.aiSentiment = {
+        score: cachedResult.sentiment,
+        isUplifting: cachedResult.isUplifting,
+        reasoning: cachedResult.reasoning,
+        originalScore: cachedResult.sentiment,
+        cached: true
+      };
+      
+      // Apply the same filtering logic as isHappyArticleAI but without async
+      const negativeKeywords = [
+        'death', 'killed', 'murder', 'war', 'attack', 'violence', 
+        'crime', 'fraud', 'scandal', 'crisis', 'disaster', 'tragedy',
+        'fire', 'accident', 'crash', 'storm', 'flood', 'earthquake',
+        'trump'
+      ];
+      
+      const spanishSections = ['en español', 'en espanol', 'spanish', 'espanol'];
+      const text = `${article.headline} ${article.abstract}`.toLowerCase();
+      
+      const hasNegativeKeywords = negativeKeywords.some(keyword => 
+        text.includes(keyword.toLowerCase())
+      );
+      
+      const isSpanishSection = spanishSections.some(section => 
+        article.section && article.section.toLowerCase().includes(section.toLowerCase())
+      );
+      
+      const hasSpanishIndicators = text.includes('en español') || text.includes('en espanol');
+      
+      const isHappy = cachedResult.isUplifting && 
+                     cachedResult.sentiment >= 6 && 
+                     !hasNegativeKeywords && 
+                     !isSpanishSection && 
+                     !hasSpanishIndicators;
+      
+      if (isHappy) {
+        filteredArticles.push(article);
+      }
+    }
+    
+    processedCount++;
+    if (progressCallback) {
+      progressCallback(processedCount, articles.length);
+    }
+  }
+  
+  // Process uncached articles in batches with delays
   const batchSize = 5;
-  for (let i = 0; i < articles.length; i += batchSize) {
-    const batch = articles.slice(i, i + batchSize);
+  for (let i = 0; i < uncachedArticles.length; i += batchSize) {
+    const batch = uncachedArticles.slice(i, i + batchSize);
     
     const batchPromises = batch.map(async (article) => {
       const isHappy = await isHappyArticleAI(article);
@@ -140,8 +203,8 @@ export const filterHappyArticlesWithAI = async (articles, progressCallback = nul
     const validArticles = batchResults.filter(article => article !== null);
     filteredArticles.push(...validArticles);
     
-    // Small delay between batches to be respectful to OpenAI API
-    if (i + batchSize < articles.length) {
+    // Only add delay between batches if there are more uncached articles to process
+    if (i + batchSize < uncachedArticles.length) {
       await new Promise(resolve => setTimeout(resolve, 1000));
     }
   }
