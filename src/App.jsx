@@ -27,8 +27,8 @@ function App() {
     setHasValidKeys(!!nytApiKey && !!openaiApiKey);
   }, [nytApiKey, openaiApiKey]);
 
-  const loadArticles = async () => {
-    if (!nytApiKey || !openaiApiKey) {
+  const loadArticlesWithKeys = async (nytKey, openaiKey) => {
+    if (!nytKey || !openaiKey) {
       setError('Please configure your API keys in preferences');
       return;
     }
@@ -38,7 +38,7 @@ function App() {
     setAiProgress({ current: 0, total: 0, cached: 0 });
     
     try {
-      const rawArticles = await fetchArticles(nytApiKey);
+      const rawArticles = await fetchArticles(nytKey);
       const formattedArticles = rawArticles.map(formatArticle);
       
       setAiProgress({ current: 0, total: formattedArticles.length, cached: 0 });
@@ -54,7 +54,7 @@ function App() {
       // Use AI-powered sentiment analysis with progress tracking
       const happyArticles = await filterHappyArticlesWithAI(
         formattedArticles,
-        openaiApiKey,
+        openaiKey,
         (current, total) => {
           setAiProgress({ 
             current, 
@@ -82,14 +82,18 @@ function App() {
     }
   };
 
+  const loadArticles = async () => {
+    return loadArticlesWithKeys(nytApiKey, openaiApiKey);
+  };
+
   const handleSaveKeys = (nytKey, openaiKey) => {
     localStorage.setItem('happytimes-nyt-key', nytKey);
     localStorage.setItem('happytimes-openai-key', openaiKey);
     setNytApiKey(nytKey);
     setOpenaiApiKey(openaiKey);
     
-    // Load articles after saving keys
-    setTimeout(() => loadArticles(), 100);
+    // Load articles immediately with the new keys (don't wait for state update)
+    loadArticlesWithKeys(nytKey, openaiKey);
   };
 
   // Auto-load articles if API keys are available
