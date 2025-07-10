@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import ArticleList from './components/ArticleList';
 import CategoryFilter from './components/CategoryFilter';
 import DarkModeToggle from './components/DarkModeToggle';
+import AuthGate from './components/AuthGate';
 import { fetchArticles, formatArticle } from './services/nytimes';
 import { filterHappyArticlesWithAI } from './services/openaiSentiment';
 import { articleCache } from './services/articleCache';
@@ -17,6 +18,9 @@ function App() {
   const [aiProgress, setAiProgress] = useState({ current: 0, total: 0, cached: 0 });
   const [selectedCategories, setSelectedCategories] = useState([]);
   const [isDarkMode, toggleDarkMode] = useDarkMode();
+  const [isAuthenticated, setIsAuthenticated] = useState(() => {
+    return localStorage.getItem('happytimes-auth') === 'true';
+  });
 
   const loadArticles = async (key) => {
     setLoading(true);
@@ -100,6 +104,16 @@ function App() {
   const filteredArticles = selectedCategories.length === 0 
     ? articles 
     : articles.filter(article => selectedCategories.includes(article.section));
+
+  // Show auth gate if not authenticated
+  if (!isAuthenticated) {
+    return (
+      <>
+        <DarkModeToggle isDarkMode={isDarkMode} onToggle={toggleDarkMode} />
+        <AuthGate onAuthenticated={() => setIsAuthenticated(true)} isDarkMode={isDarkMode} />
+      </>
+    );
+  }
 
   if (showApiInput) {
     return (

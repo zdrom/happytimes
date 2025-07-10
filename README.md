@@ -53,6 +53,14 @@ A personal news aggregator that shows only happy and uplifting articles from The
 
 7. Open your browser to `http://localhost:3000` - articles will load automatically!
 
+## Security
+
+The app includes password protection to prevent unauthorized API usage when deployed publicly:
+
+- **Default password**: `happynews2024`
+- **To change**: Edit the `CORRECT_PASSWORD` in `src/components/AuthGate.jsx`
+- **Authentication**: Stored in localStorage, persists across sessions
+
 ## How It Works
 
 1. **Fetches** articles from the NYTimes TimeWire API
