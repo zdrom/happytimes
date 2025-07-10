@@ -1,6 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 
 const CategoryFilter = ({ articles, selectedCategories, onCategoryToggle, isDarkMode }) => {
+  const [isExpanded, setIsExpanded] = useState(false);
+  
   // Get unique categories from articles (these are already filtered happy articles)
   const categories = [...new Set(articles.map(article => article.section).filter(Boolean))].sort();
   
@@ -10,9 +12,23 @@ const CategoryFilter = ({ articles, selectedCategories, onCategoryToggle, isDark
 
   return (
     <div className={`${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} rounded-lg shadow-md p-4 mb-6 border`}>
-      <h3 className={`text-sm font-medium ${isDarkMode ? 'text-gray-200' : 'text-gray-700'} mb-3`}>
-        📂 Filter by Category ({totalArticles} happy articles)
-      </h3>
+      <button
+        onClick={() => setIsExpanded(!isExpanded)}
+        className={`w-full flex items-center justify-between text-sm font-medium ${isDarkMode ? 'text-gray-200' : 'text-gray-700'} hover:opacity-80 transition-opacity`}
+      >
+        <span>📂 Filter by Category ({totalArticles} happy articles)</span>
+        <svg 
+          className={`w-4 h-4 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`} 
+          fill="none" 
+          stroke="currentColor" 
+          viewBox="0 0 24 24"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+      
+      {isExpanded && (
+        <div className="mt-3">
       <div className="flex flex-wrap gap-2">
         {categories.map(category => {
           const isSelected = selectedCategories.includes(category);
@@ -61,6 +77,8 @@ const CategoryFilter = ({ articles, selectedCategories, onCategoryToggle, isDark
           </button>
         )}
       </div>
+        </div>
+      )}
     </div>
   );
 };
