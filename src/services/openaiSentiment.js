@@ -61,7 +61,14 @@ Respond only with valid JSON:`;
       temperature: 0.1
     });
 
+    // Log the complete OpenAI response to console
+    console.log('OpenAI API Response:', response);
+    console.log('OpenAI Message Content:', response.choices[0].message.content);
+
     const result = JSON.parse(response.choices[0].message.content);
+    
+    // Log the parsed result
+    console.log('Parsed AI Analysis Result:', result);
     
     // Cache the result
     articleCache.set(article, result);
