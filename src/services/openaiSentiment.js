@@ -196,8 +196,13 @@ export const filterHappyArticlesWithAI = async (articles, apiKey, progressCallba
     
     processedCount++;
     if (progressCallback) {
-      progressCallback(processedCount, articles.length);
+      progressCallback(processedCount, articles.length, [...filteredArticles]);
     }
+  }
+  
+  // If we have cached articles, send them immediately for progressive loading
+  if (filteredArticles.length > 0 && progressCallback) {
+    progressCallback(processedCount, articles.length, [...filteredArticles]);
   }
   
   // Process uncached articles in batches with delays
@@ -208,15 +213,20 @@ export const filterHappyArticlesWithAI = async (articles, apiKey, progressCallba
     const batchPromises = batch.map(async (article) => {
       const isHappy = await isHappyArticleAI(article, apiKey);
       processedCount++;
+      
+      let updatedArticles = [...filteredArticles];
+      if (isHappy) {
+        filteredArticles.push(article);
+        updatedArticles = [...filteredArticles];
+      }
+      
       if (progressCallback) {
-        progressCallback(processedCount, articles.length);
+        progressCallback(processedCount, articles.length, updatedArticles);
       }
       return isHappy ? article : null;
     });
     
-    const batchResults = await Promise.all(batchPromises);
-    const validArticles = batchResults.filter(article => article !== null);
-    filteredArticles.push(...validArticles);
+    await Promise.all(batchPromises);
     
     // Only add delay between batches if there are more uncached articles to process
     if (i + batchSize < uncachedArticles.length) {

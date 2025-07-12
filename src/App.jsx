@@ -13,7 +13,7 @@ function App() {
   const [articles, setArticles] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [aiProgress, setAiProgress] = useState({ current: 0, total: 0, cached: 0 });
+  const [aiProgress, setAiProgress] = useState({ current: 0, total: 0, cached: 0, uncached: 0, processing: false });
   const [selectedCategories, setSelectedCategories] = useState([]);
   const [isDarkMode, toggleDarkMode] = useDarkMode();
   const [showPreferences, setShowPreferences] = useState(false);
@@ -35,27 +35,37 @@ function App() {
 
     setLoading(true);
     setError(null);
-    setAiProgress({ current: 0, total: 0, cached: 0 });
+    setAiProgress({ current: 0, total: 0, cached: 0, uncached: 0, processing: false });
     
     try {
       const rawArticles = await fetchArticles(nytKey);
       const formattedArticles = rawArticles.map(formatArticle);
       
-      setAiProgress({ current: 0, total: formattedArticles.length, cached: 0 });
-      
-      // Count cached articles
+      // Count cached vs uncached articles
       let cachedCount = 0;
+      let uncachedCount = 0;
       formattedArticles.forEach(article => {
-        if (articleCache.has(article)) cachedCount++;
+        if (articleCache.has(article)) {
+          cachedCount++;
+        } else {
+          uncachedCount++;
+        }
       });
       
-      const uncachedCount = formattedArticles.length - cachedCount;
+      setAiProgress({ 
+        current: 0, 
+        total: formattedArticles.length, 
+        cached: cachedCount,
+        uncached: uncachedCount,
+        processing: uncachedCount > 0
+      });
       
-      // Use AI-powered sentiment analysis with progress tracking
-      const happyArticles = await filterHappyArticlesWithAI(
+      // Use progressive AI-powered sentiment analysis with real-time updates
+      await filterHappyArticlesWithAI(
         formattedArticles,
         openaiKey,
-        (current, total) => {
+        (current, total, progressiveArticles) => {
+          // Update progress
           setAiProgress({ 
             current, 
             total, 
@@ -63,22 +73,20 @@ function App() {
             uncached: uncachedCount,
             processing: current < total
           });
+          
+          // Update articles in real-time as they become available
+          if (progressiveArticles && progressiveArticles.length > 0) {
+            const processedArticles = newArticleTracker.processArticles(progressiveArticles);
+            setArticles(processedArticles);
+          }
         }
       );
       
-      // Process articles to mark new ones and sort them
-      const processedArticles = newArticleTracker.processArticles(happyArticles);
-      
-      setArticles(processedArticles);
-      
-      if (happyArticles.length === 0) {
-        setError('No happy articles found. Try refreshing for new content!');
-      }
     } catch (err) {
       setError(err.message || 'Failed to load articles');
     } finally {
       setLoading(false);
-      setAiProgress({ current: 0, total: 0, cached: 0 });
+      setAiProgress({ current: 0, total: 0, cached: 0, uncached: 0, processing: false });
     }
   };
 
@@ -191,7 +199,12 @@ function App() {
           {loading && aiProgress.total > 0 && aiProgress.uncached > 0 && (
             <div className={`rounded-lg shadow-md p-4 mb-4 text-center ${isDarkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white'}`}>
               <div className={`text-sm mb-2 ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-                🤖 AI is analyzing {aiProgress.uncached} new articles for positive sentiment...
+                🤖 AI scanning {aiProgress.uncached} new articles...
+                {aiProgress.cached > 0 && (
+                  <span className={`ml-2 ${isDarkMode ? 'text-green-400' : 'text-green-600'}`}>
+                    ({aiProgress.cached} loaded instantly from cache)
+                  </span>
+                )}
               </div>
               <div className={`w-full rounded-full h-2 ${isDarkMode ? 'bg-gray-700' : 'bg-gray-200'}`}>
                 <div 
@@ -204,12 +217,7 @@ function App() {
                 ></div>
               </div>
               <div className={`text-xs mt-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                {aiProgress.current} of {aiProgress.total} articles analyzed
-                {aiProgress.cached > 0 && (
-                  <span className={`ml-2 ${isDarkMode ? 'text-green-400' : 'text-green-600'}`}>
-                    • {aiProgress.cached} cached (instant loading!)
-                  </span>
-                )}
+                {aiProgress.current} of {aiProgress.total} articles processed
               </div>
             </div>
           )}
